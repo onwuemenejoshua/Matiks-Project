@@ -2,11 +2,10 @@ Page 1 — Overview / Executive Summary
 
 
 
-1. KPI cards: Total Users, DAU, WAU, MAU (proxy), Total Revenue, ARPU, ARPPU, Churn Rate, Conversion Rate
-2. Line chart: Revenue trend over time (monthly)
+1. KPI cards: Total Users, Total Revenue, ARPU, ARPPU, Churn Rate, Conversion Rate
+2. Line chart: Revenue by cohort
 3. Line chart: New signups trend (monthly)
-4. Line chart: Active users trend (MAU proxy, monthly)
-5. Donut: Revenue split by Subscription\_Tier
+4. Donut: Revenue split by Subscription\_Tier
 
 
 
@@ -40,7 +39,7 @@ Page 4 — Churn \& Retention
 
 
 
-1. KPI cards: Churn Rate (30/60/90-day), % Inactive Users
+1. KPI cards: Recency Segments — Active (0-7d), Cooling (8-14d), At Risk (15-21d), Churn Risk (22-29d), % Inactive
 2. Bar chart: Days Since Last Login distribution (time gaps)
 3. Bar chart: Churn rate by Device\_Type / Subscription\_Tier / Referral\_Source
 4. Table: At-risk high-value users (high revenue/purchases, inactive 30+ days)
@@ -53,5 +52,4 @@ Page 5 — High-Value Users \& Cohorts
 
 1. Table/profile: Top revenue decile — avg Device\_Type, Referral\_Source, Game\_Mode, Subscription\_Tier vs overall average
 2. Quadrant chart: Frequency vs Revenue (NTILE-based, stands in for clustering)
-3. Cohort retention heatmap: Signup month × months since signup
-4. Bar chart: Revenue by Referral\_Source
+3. Bar chart: Revenue by Referral\_Source
