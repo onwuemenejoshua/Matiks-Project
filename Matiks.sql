@@ -92,6 +92,8 @@ SELECT
     TRY_CAST(Achievement_Score AS INT)
 FROM dbo.Staging_Users;
 
+
+
 -- checking if no date was parsed
 
 SELECT COUNT(*) AS unparsed_dates
@@ -126,16 +128,17 @@ SELECT * FROM Ref_Date;
 COHORT LOGIC (by signup month): How do newer vs older cohort behave.
 */
 
+
 CREATE VIEW vw_UserCohorts AS
 SELECT
-    u.*,
+    u.User_ID,
     DATEFROMPARTS(YEAR(u.Signup_Date), MONTH(u.Signup_Date), 1) AS Signup_Cohort_Month,
     DATEDIFF(DAY, u.Signup_Date, r.Snapshot_Date)                AS Tenure_Days,
     DATEDIFF(MONTH, u.Signup_Date, r.Snapshot_Date)              AS Tenure_Months
 FROM Matiks AS u
 CROSS JOIN Ref_Date AS r;
 
-SELECT * FROM vw_UserCohorts
+SELECT * FROM vw_UserCohorts;
 
 -- cohort revenue summary
 
@@ -148,7 +151,8 @@ SELECT
         SUM(Total_Revenue_USD) / NULLIF(SUM(Tenure_Days), 0) * 30
         AS DECIMAL(10,2)
     ) AS Avg_Revenue_Per_User_Per_30Days
-FROM vw_UserCohorts
+FROM vw_UserCohorts as C
+JOIN Matiks m ON m.User_ID = c.User_ID
 GROUP BY Signup_Cohort_Month
 ORDER BY Signup_Cohort_Month;
 
@@ -156,10 +160,9 @@ ORDER BY Signup_Cohort_Month;
 RECENCY/CHURN PROXY (based on last login gap)
 */
 
-
 CREATE VIEW vw_UserRecency AS
 SELECT
-    u.*,
+    u.USER_ID,
     DATEDIFF(DAY, u.Last_Login, r.Snapshot_Date) AS Days_Since_Last_Login,
     CASE
         WHEN DATEDIFF(DAY, u.Last_Login, r.Snapshot_Date) <= 7  THEN 'Active (0-7d)'
@@ -175,16 +178,19 @@ SELECT * FROM vw_UserRecency;
 
 -- Recency segment summary: size, engagement, revenue by segment
 
+
+
 SELECT
-    Recency_Segment,
+    rc.Recency_Segment,
     COUNT(*)    AS Users,
-    CAST(AVG(Total_Play_Sessions) AS DECIMAL(10,2))  AS Avg_Sessions,
-    CAST(AVG(Total_Hours_Played) AS DECIMAL(10,2))   AS Avg_Hours_Played,
-    CAST(AVG(Total_Revenue_USD) AS DECIMAL(10,2))    AS Avg_Revenue,
-    SUM(Total_Revenue_USD)    AS Total_Revenue
-FROM vw_UserRecency
-GROUP BY Recency_Segment
-ORDER BY MIN(Days_Since_Last_Login); -- find it lowest inactive days and use it to arrange the groups from lowest to highest
+    CAST(AVG(m.Total_Play_Sessions) AS DECIMAL(10,2))  AS Avg_Sessions,
+    CAST(AVG(m.Total_Hours_Played) AS DECIMAL(10,2))   AS Avg_Hours_Played,
+    CAST(AVG(m.Total_Revenue_USD) AS DECIMAL(10,2))    AS Avg_Revenue,
+    SUM(m.Total_Revenue_USD)    AS Total_Revenue
+FROM vw_UserRecency as rc
+JOIN Matiks m ON m.User_ID = rc.User_ID
+GROUP BY rc.Recency_Segment
+ORDER BY MIN(rc.Days_Since_Last_Login); -- find it lowest inactive days and use it to arrange the groups from lowest to highest
 
 /*
 
@@ -192,21 +198,22 @@ ORDER BY MIN(Days_Since_Last_Login); -- find it lowest inactive days and use it 
 */
 
 SELECT
-    c.User_ID,
-    c.Username,
+    m.User_ID,
+    m.Username,
     c.Signup_Cohort_Month,
     c.Tenure_Days,
     rc.Days_Since_Last_Login,
     rc.Recency_Segment,
-    c.Total_Play_Sessions,
-    c.Total_Hours_Played,
-    c.In_Game_Purchases_Count,
-    c.Total_Revenue_USD,
-    c.Rank_Tier,
-    NTILE(4) OVER (ORDER BY c.Total_Revenue_USD DESC) AS Revenue_Quartile -- 1 = top spenders
-FROM vw_UserCohorts AS c
-JOIN vw_UserRecency AS rc ON rc.User_ID = c.User_ID
-ORDER BY c.Total_Revenue_USD DESC;
+    m.Total_Play_Sessions,
+    m.Total_Hours_Played,
+    m.In_Game_Purchases_Count,
+    m.Total_Revenue_USD,
+    m.Rank_Tier,
+    NTILE(4) OVER (ORDER BY m.Total_Revenue_USD DESC) AS Revenue_Quartile -- 1 = top spenders
+FROM Matiks m
+JOIN vw_UserCohorts c  ON c.User_ID = m.User_ID
+JOIN vw_UserRecency rc ON rc.User_ID = m.User_ID
+ORDER BY m.Total_Revenue_USD DESC;
 
 -- User Segmentation (frequency vs revenue)
 
@@ -219,3 +226,20 @@ SELECT
 FROM Matiks
 ORDER BY Total_Revenue_USD DESC;
  
+
+SELECT
+    'Signed Up' AS Funnel_Stage, COUNT(*) AS Users, 1 AS Stage_Order
+FROM Matiks
+UNION ALL
+SELECT 'Played First Game', COUNT(*), 2
+FROM Matiks WHERE Total_Play_Sessions >= 1
+UNION ALL
+SELECT 'Repeat Session', COUNT(*), 3
+FROM Matiks WHERE Total_Play_Sessions >= 2
+UNION ALL
+SELECT 'Engaged User (5+ sessions)', COUNT(*), 4
+FROM Matiks WHERE Total_Play_Sessions >= 5
+UNION ALL
+SELECT 'Monetized (Made a Purchase)', COUNT(*), 5
+FROM Matiks WHERE In_Game_Purchases_Count >= 1
+ORDER BY Stage_Order;
