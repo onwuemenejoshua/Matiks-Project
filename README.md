@@ -45,6 +45,8 @@ The Power BI dashboard is organised into 5 pages:
 
 https://github.com/user-attachments/assets/e2bdb418-bf60-475f-9271-8d1b4975eefa
 
+**You can also watch the dashboard visualisation here**: https://www.loom.com/share/6502a6b597094f8da78f8106e8fd9c0c
+
 ### Insights
 
 1. Free-tier users spend at most as much as paid subscribers. ARPU is $50.57 for free, $50.42 for silver, $50.37 for platinum and $49.36 for gold. A roughly $1 spread across all four tiers. If tier actually reflected spending power or intent, you'd expect a ladder: Free < Silver < Gold < Platinum. Instead, it's flat, and Gold is actually the lowest of the four. This shows the subscription tier isn't functioning the way it ought to function.
